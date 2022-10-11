@@ -9,7 +9,7 @@ class fetchCricketData:
   querystring = {"matchId":"50921"}
 
   headers = {
-      "X-RapidAPI-Key": "88f6f91fd0msh4e8e0f86448e525p181c08jsnc3ff883e206e",
+      "X-RapidAPI-Key": "#####",
       "X-RapidAPI-Host": "unofficial-cricbuzz.p.rapidapi.com"
       }
   individual_team_score_list = []
