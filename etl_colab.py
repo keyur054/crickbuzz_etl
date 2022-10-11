@@ -1,9 +1,13 @@
-# This script fetch the apis data from cricbuzz apis,
-# prepares the json fro the scores and uploads it to the cloud storage data lake.
 
-import pandas as pd
+
 import requests
-import logging
+import pandas as pd
+
+from google.colab import auth
+auth.authenticate_user()
+
+project_id = 'cricbuzz-score'
+!gcloud config set project {project_id}
 
 class fetchCricketData:
 
@@ -20,8 +24,8 @@ class fetchCricketData:
 
   individual_team_score_list = []
   individual_batsman_score_list = []
-  
-  # This global function will appned 0 if any json valus is missing.
+
+   # This global function will appned 0 if any json valus is missing.
   @staticmethod
   def appendNotExistedValue(listToAppend , key, fromListToCheck):
     if key in fromListToCheck:
@@ -30,21 +34,19 @@ class fetchCricketData:
       listToAppend[key] = 0
     return listToAppend
 
-  # This function will convert json to CSV and store to cloud storage.
-  # @staticmethod
   # def convertAndSaveCSV(arrayList, name):
   #   df = pd.DataFrame(arrayList)
   #   #df.to_csv(name, index=False)
   #   df.to_csv(name, index = False)
-  #   !gsutil cp name 'gs://cricbuzz_score_csv/'
+  #   print(name)
+  #   !gsutil cp "'"+ name + "'"  gs://cricbuzz_score_csv//
   #   logging.info(name)
 
   
-  # Request and prepare the csv for data lake
   @classmethod
-  def requestandConvertApiResponse(cls):
+  def requestandConvertApiResponse(self):
 
-    response = requests.request("GET", cls.url, headers=cls.headers, params=cls.querystring)
+    response = requests.request("GET", self.url, headers=self.headers, params=self.querystring)
 
     score = response.json()
 
@@ -61,7 +63,7 @@ class fetchCricketData:
                           'inningsOrder' :scorecard_team['inningsId']
                           }
 
-      cls.individual_team_score_list.append(individual_score)
+      self.individual_team_score_list.append(individual_score)
 
       #Iterating in each batsman scorecard
       for batsaman_performance in scorecard_team['batsman']:
@@ -71,20 +73,23 @@ class fetchCricketData:
             'team' : scorecard_team['batTeamSName']
             }
 
-        batsman_score_list = cls.appendNotExistedValue(batsman_score_list, 'runs', batsaman_performance)
-        batsman_score_list = cls.appendNotExistedValue(batsman_score_list, 'balls', batsaman_performance)
-        batsman_score_list = cls.appendNotExistedValue(batsman_score_list, 'fours', batsaman_performance)
-        batsman_score_list = cls.appendNotExistedValue(batsman_score_list, 'sixes', batsaman_performance)
-        batsman_score_list = cls.appendNotExistedValue(batsman_score_list, 'outDec', batsaman_performance)
+        batsman_score_list = self.appendNotExistedValue(batsman_score_list, 'runs', batsaman_performance)
+        batsman_score_list = self.appendNotExistedValue(batsman_score_list, 'balls', batsaman_performance)
+        batsman_score_list = self.appendNotExistedValue(batsman_score_list, 'fours', batsaman_performance)
+        batsman_score_list = self.appendNotExistedValue(batsman_score_list, 'sixes', batsaman_performance)
+        batsman_score_list = self.appendNotExistedValue(batsman_score_list, 'outDec', batsaman_performance)
 
-        cls.individual_batsman_score_list.append(batsman_score_list)
+        self.individual_batsman_score_list.append(batsman_score_list)
+    
+    #self.convertAndSaveCSV(self.individual_team_score_list,'team_score.csv')
+    #self.convertAndSaveCSV(self.individual_batsman_score_list,'batsman_scorecard.csv')
+    # Saving csv to cloud storage
+    team_score_df = pd.DataFrame(self.individual_team_score_list)
+    team_score_df.to_csv('team_score.csv', index=False)
+    !gsutil cp team_score.csv  gs://cricbuzz_score_csv//
 
-    df_team_score = pd.DataFrame(cls.individual_team_score_list)
-    df_team_score.to_csv('team_score.csv', index = False)
-    !gsutil cp team_score.csv 'gs://cricbuzz_score_csv/'
+    indi_score_df = pd.DataFrame(self.individual_batsman_score_list)
+    indi_score_df.to_csv('batsman_scorecard.csv', index=False)
+    !gsutil cp batsman_scorecard.csv  gs://cricbuzz_score_csv//
 
-    df_batsman_score = pd.DataFrame(cls.individual_batsman_score_list)
-    df_batsman_score.to_csv('batsman_scorecard.csv', index = False)
-    !gsutil cp batsman_scorecard.csv 'gs://cricbuzz_score_csv/'
-    # cls.convertAndSaveCSV(cls.individual_team_score_list,'team_score.csv')
-    # cls.convertAndSaveCSV(cls.individual_batsman_score_list,'batsman_scorecard.csv')
+fetchCricketData.requestandConvertApiResponse()

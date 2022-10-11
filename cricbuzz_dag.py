@@ -1,4 +1,6 @@
-import logging
+# This script migrate csv from cloud storage to Big Query with specific schema.
+
+
 import datetime
 import logging
 from airflow import models
@@ -7,7 +9,7 @@ from airflow.utils.dates import days_ago
 from airflow.operators.python_operator import PythonOperator
 from airflow.providers.google.cloud.transfers.gcs_to_bigquery import GCSToBigQueryOperator
 
-
+# Decalring the global variable from airflow variables section.
 bucket_path = "{{var.value.bucket_path}}"
 project_id = "{{var.value.project_id}}"
 gce_zone = "{{var.value.gce_zone}}"
@@ -29,12 +31,14 @@ with models.DAG(
     "cricbuzz_comoposer_dag",
     default_args=default_args,
     # The interval with which to schedule the DAG
-    schedule_interval= datetime.timedelta(days=1),  # Override to match your needs
+    schedule_interval= datetime.timedelta(days = 1), 
 ) as dag:
 
+    # First Hello Function
     def greetin():
         logging.info('Hello Airflow')
 
+    # End Function
     def end():
         logging.info('End of flow')
 
@@ -43,6 +47,8 @@ with models.DAG(
     #     fetchCricketData.requestandConvertApiResponse()
     #     logging.info('Call api end')
 
+
+    # Frist scheduler to run
     python_hello = PythonOperator(
         task_id = 'hello',
         python_callable = greetin
@@ -65,12 +71,13 @@ with models.DAG(
     #     object = "batsman_scorecard.csv"
     # )
 
+    #Second task to move csv to bigquery with schema
     moveTeamScoreCSVToBigQuery = GCSToBigQueryOperator(
         task_id='load_to_bq',
-        bucket='cricbuzz_score_csv',
-        source_objects=['team_score.csv'],
-        destination_project_dataset_table='cricbuzz-score.cricbuzz_stat.team_score',
-        skip_leading_rows=1,
+        bucket='cricbuzz_score_csv', # Name of the cloud storage
+        source_objects=['team_score.csv'], # File name as per cloud storage
+        destination_project_dataset_table='cricbuzz-score.cricbuzz_stat.team_score', # Name as per the bigquery table.
+        skip_leading_rows = 1,
         schema_fields=[
     {
         "name": "runs",
@@ -111,9 +118,9 @@ with models.DAG(
 
     movebatsmanScoreCSVToBigQuery = GCSToBigQueryOperator(
         task_id='load_batsmand_score_to_bq',
-        bucket='cricbuzz_score_csv',
-        source_objects=['batsman_scorecard.csv'],
-        destination_project_dataset_table='cricbuzz-score.cricbuzz_stat.batsman_scorecard',
+        bucket='cricbuzz_score_csv', # Name of the cloud storage
+        source_objects=['batsman_scorecard.csv'], # File name as per cloud storage
+        destination_project_dataset_table='cricbuzz-score.cricbuzz_stat.batsman_scorecard', # Name as per the bigquery table.
         skip_leading_rows=1,
         schema_fields=[
             {
@@ -151,7 +158,9 @@ with models.DAG(
                 "type": "STRING"
             }
             ])
-   
+
+
+    # End of Airflow tasks
     python_end = PythonOperator(
         task_id = 'end',
         python_callable = end
@@ -159,5 +168,6 @@ with models.DAG(
 
     # python_hello >> call_api >> validate_team_file_exists >> validate_innings_file_exists >> python_end
     # python_hello >> validate_team_file_exists >> validate_innings_file_exists >> python_end
+
+    # Hierarchy of the Tasks
     python_hello >> moveTeamScoreCSVToBigQuery >> movebatsmanScoreCSVToBigQuery >> python_end
-    # python_hello >> python_end
