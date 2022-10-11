@@ -41,3 +41,7 @@ batsman_scorecard
 `cricbuzz_etl.py` Creates Apis request, fetch and transform data into CSV format inside Google Cloud Storage.
 
 `cricbuzz_dag.py` Migrate CSV from cloud storage to Big Query.
+
+### Future Work Pipeline
+1. Will call apis and trasnfrom the data from dags file only.
+2. Try to create the straming pipeling with the same apis for live matches.
